@@ -4,19 +4,27 @@ const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const app = express();
 const mongoose = require("mongoose");
+const encrypt = require("mongoose-encryption");
 
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 app.set("view engine", "ejs");
 
-// Crearing BD for Users
+// Creating BD for Users
 
 mongoose.connect("mongodb://localhost:27017/userDB", {useNewUrlParser: true, useUnifiedTopology: true});
-const userSchema = {
+const userSchema = new mongoose.Schema ({
   email: String,
   password: String
-};
+});
+
+// Pluging in encrypt just before we create the mongoose model
+
+const secret = "Littlesecret";
+userSchema.plugin(encrypt, {secret: secret, encryptedFields: ["password"]});
+
+
 const User = new mongoose.model("user", userSchema);
 
 
