@@ -36,7 +36,9 @@ const userSchema = new mongoose.Schema ({
   email: String,
   password: String,
   // googleID added to schema to prevent user's profile to be created multiple timese in db
-  googleId: String
+  googleId: String,
+  // Secret field added to make users add and save theirs secrets
+  secret: []
 });
 
 // Pluging in userSchema with passportLocalMongoose to hash and salt passwords before saving
@@ -108,13 +110,26 @@ app.get("/register",function(req,res){
 
 // Render secrets page only if authenticated
 app.get("/secrets",function(req,res){
+  User.find({"secret":{$ne:null}},function(err,foundUsers){
+    if(err){
+      console.log(err);
+    }else{
+      if(foundUsers){
+        res.render("secrets", {
+          usersWithSecrets: foundUsers
+        });
+      }
+    }
+  });
+});
+
+app.get("/submit", function(req,res){
   if (req.isAuthenticated()){
-    res.render("secrets");
+    res.render("submit");
   }else{
     res.redirect("/login")
   }
-});
-
+})
 
 // New user registration and redirect for secrets page
 
@@ -147,6 +162,22 @@ app.post("/login", function(req,res){
       console.log(err);
     }else{
       passport.authenticate("local")(req,res,function(){
+        res.redirect("secrets")
+      });
+    }
+  });
+
+});
+
+app.post("/submit",function(req,res){
+  const newSecret = req.body.secret;
+  console.log(newSecret);
+  User.findById(req.user.id,function(err,foundUser){
+    if(err){
+      console.log(err);
+    }if(foundUser){
+      foundUser.secret.push(newSecret);
+      foundUser.save(function(){
         res.redirect("secrets")
       });
     }
